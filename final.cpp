@@ -2,7 +2,8 @@
 #include <cstdio>
 #include <stdio.h>
 #include <cstring>
-#include <unistd.h>
+#include <termios.h>
+#include "get.h"
 
 #define EMP_FILE "EmployeeData.txt"
 
@@ -72,7 +73,7 @@ void press() //function for prompt
 
 int checkpass(const char *pswd) //checking password conditions
 {
-	int a,up,low,digi,i;
+	int a,up=0,low=0,digi=0,i;
 	a=strlen(pswd);
 	if(a<6)
 	{
@@ -84,7 +85,7 @@ int checkpass(const char *pswd) //checking password conditions
 	}
 	else
 	{
-		cout<<a;
+		
 		for(i=0;pswd[i]!='\0';i++)
 		{
 			if(pswd[i]>='A' && pswd[i]<='Z')
@@ -106,6 +107,26 @@ int checkpass(const char *pswd) //checking password conditions
 				cout<<"\n\t\t\t\t\tThere must be at least one Digit";
 		}
 	}
+}
+
+void getPassword(char *pass)
+{
+    int c=0;
+    char buff[30]={0},ch;
+    int len=0;
+    while((ch=getch())!='\n')
+    {
+        if(ch==0x7f)    // use 0x08 in turboc (WINDOWS)
+        {
+            if(len==0)  continue;
+            printf("\b \b"); len--; continue;
+        }
+        printf("%c",'*');
+        pass[len]=ch;
+        len++;
+    }
+    pass[len]='\0';
+
 }
 
 class Employee //employee class
@@ -162,6 +183,10 @@ void Employee::addEmp() //function to add employee details
     Employee e;
     int check, status;
     system("clear");
+    gotoxy(50,5);
+    cout<<"ADD EMPLOYEE";
+    gotoxy(48,7);
+    cout<<"----------------------";
     fp=fopen(EMP_FILE,"r+");
     if(fp == NULL)
     {
@@ -184,7 +209,6 @@ void Employee::addEmp() //function to add employee details
                 if(check) //if already exists
                 {
                         cout<<"\n\t\t\tEmployee ID already exists!";
-                        system("clear");
                 }
 			}while(check);
 
@@ -295,6 +319,10 @@ void Employee::deleteEmp() //function to delete an employee
 {
 	Employee e;
 	system("clear");
+	gotoxy(50,5);
+    cout<<"DELETE EMPLOYEE";
+    gotoxy(48,7);
+    cout<<"----------------------";
 	int found=0, delId=0;
 	char choice;
 	FILE *fp=NULL;
@@ -380,6 +408,10 @@ void Employee::modifyEmp() //function to modify details of an employee
 {
 	Employee e;
 	system("clear");
+	gotoxy(50,5);
+    cout<<"MODIFY EMPLOYEE";
+    gotoxy(48,7);
+    cout<<"----------------------";
 	int found=0, modId=0, check=0, status=0;
 	char choice, save;
 	FILE *fp=NULL;
@@ -393,19 +425,19 @@ void Employee::modifyEmp() //function to modify details of an employee
 	}
 	
 	rewind(fp);
-	cout<<"\n\n\t\tEnter ID of employee to modify : ";
+	cout<<"\n\n\t\tEnter ID of employee to modify : "; //prompt
 	cin>>modId;
 	while (fread (&e, sizeof(e), 1, fp))
     {
-		if(e.empID == modId)
+		if(e.empID == modId) //searching for the entered id
         {
 			found = 1;
             break;
         }
      }
-     if(found==1)
+     if(found==1) //if id found
      {
-		 fseek(fp,-sizeof(e),SEEK_CUR);
+		 fseek(fp,-sizeof(e),SEEK_CUR); //moves the cursor back
 		 cout<<"\n\n------------------------------------------------------------------------------------";
          cout<<"\n\n\t\tEMPLOYEE ID     : "<<e.empID;
          cout<<"\n\n\t\tNAME            : "<<e.empName;
@@ -417,7 +449,7 @@ void Employee::modifyEmp() //function to modify details of an employee
          cout<<"\n\n\t\tBANK ACCOUNT NO : "<<e.bankAccount;
          cout<<"\n\n------------------------------------------------------------------------------------";
 		 
-		 cout<<"\n\n\t\tDo you want to modify this employee? (y/n) : ";
+		 cout<<"\n\n\t\tDo you want to modify this employee? (y/n) : "; //prompt
          cin>>choice;
          
         if(choice == 'y')
@@ -428,7 +460,7 @@ void Employee::modifyEmp() //function to modify details of an employee
             {
 				cout<<"\n\n\t\tEnter Employee ID : ";
                 cin>>e.empID;
-                if(e.empID != modId)
+                if(e.empID != modId) //only same employee can be modified
                 {
                         cout<<"\n\n\t\tCannot change Employee ID, enter the same";
                 }
@@ -545,61 +577,66 @@ void Employee::modifyEmp() //function to modify details of an employee
 	fclose(fp);
 }
 
-void Employee::searchEmp(int id)
+void Employee::searchEmp(int id) //function to search an employee
 {
-        Employee e;
-        int found=0;
-        system("clear");
-        fp = fopen(EMP_FILE,"r+");
-        if(fp == NULL)
+	Employee e;
+	int found=0;
+	system("clear");
+	gotoxy(50,5);
+    cout<<"SEARCH AN EMPLOYEE";
+    gotoxy(48,7);
+    cout<<"----------------------";
+	fp = fopen(EMP_FILE,"r+");
+	if(fp == NULL)
     {
-        if((fp=fopen(EMP_FILE,"w+"))==NULL)
+		if((fp=fopen(EMP_FILE,"w+"))==NULL)
         {
             cout<<"\ncan't open file";
             exit(0);
         }
     }
-        else
-        {
-     
-                rewind(fp);
-                while (fread (&e, sizeof(e), 1, fp))
-                {
-                        if(e.empID == id)
-                        {
-                                found = 1;
-                                break;
-                        }
-                }
-                if(found==1)
-                {
-                        cout<<"\n\n------------------------------------------------------------------------------------";
-                        cout<<"\n\t\tSearched Employee found";
-                        cout<<"\n\n------------------------------------------------------------------------------------";
-                        cout<<"\n\n\t\tEMPLOYEE ID     : "<<e.empID;
-                        cout<<"\n\n\t\tNAME            : "<<e.empName;
-                        cout<<"\n\n\t\tDESIGNATION     : "<<e.desig;
-                        cout<<"\n\n\t\tDATE OF JOINING : "<<e.DoJ.dd<<"/"<<e.DoJ.mm<<"/"<<e.DoJ.yyyy;
-                        cout<<"\n\n\t\tADDRESS         : "<<e.empAddress;
-                        cout<<"\n\n\t\tEMAIL ID        : "<<e.empMail;
-                        cout<<"\n\n\t\tCONTACT NO.     : "<<e.empContact;
-                        cout<<"\n\n\t\tBANK ACCOUNT NO : "<<e.bankAccount;
-            cout<<"\n\n------------------------------------------------------------------------------------";
-
-                }
-                else
-                        cout<<"\n\nNot found";
-                fclose(fp);
-        }
-        press();
+	else
+	{
+		rewind(fp);
+		while (fread (&e, sizeof(e), 1, fp))
+		{
+			if(e.empID == id) //searching for the id
+			{
+				found = 1;
+				break;
+			}
+		}
+		if(found==1) //if searched id is found
+		{
+			cout<<"\n\n------------------------------------------------------------------------------------";
+			cout<<"\n\t\tSearched Employee found";
+			cout<<"\n\n------------------------------------------------------------------------------------";
+			cout<<"\n\n\t\tEMPLOYEE ID     : "<<e.empID;
+			cout<<"\n\n\t\tNAME            : "<<e.empName;
+			cout<<"\n\n\t\tDESIGNATION     : "<<e.desig;
+			cout<<"\n\n\t\tDATE OF JOINING : "<<e.DoJ.dd<<"/"<<e.DoJ.mm<<"/"<<e.DoJ.yyyy;
+			cout<<"\n\n\t\tADDRESS         : "<<e.empAddress;
+			cout<<"\n\n\t\tEMAIL ID        : "<<e.empMail;
+			cout<<"\n\n\t\tCONTACT NO.     : "<<e.empContact;
+			cout<<"\n\n\t\tBANK ACCOUNT NO : "<<e.bankAccount;
+			cout<<"\n\n------------------------------------------------------------------------------------";
+		}
+		else
+			cout<<"\n\nNot found";
+		fclose(fp);
+	}
+	press();
 }
 
-void Employee::displayEmp()
+void Employee::displayEmp() //function to display all employees
 {
 	Employee e;
 	FILE *fp;
 	system("clear");
-    cout<<"\n\t\t\tList  of Employees";
+    gotoxy(50,5);
+    cout<<"ALLL EMPLOYEES";
+    gotoxy(48,7);
+    cout<<"----------------------";
     int found = 0;
 	fp = fopen(EMP_FILE,"r+");
 	if(fp == NULL)
@@ -612,7 +649,7 @@ void Employee::displayEmp()
 	}
 	else
 	{
-		while((fread(&e,sizeof(e),1,fp))==1)
+		while((fread(&e,sizeof(e),1,fp))==1) //traversing all the employees
 		{
 			cout<<"\n\n------------------------------------------------------------------------------------";
 			cout<<"\n\n\t\tEMPLOYEE ID     : "<<e.empID;
@@ -627,19 +664,23 @@ void Employee::displayEmp()
             found=1;
         }
 	}
-	fclose(fp);
-    if(!found)
+	if(!found)
     {
         cout<<"\n\t\t\tNo Record !!!";
     }
+    fclose(fp);
     press();
 }
 
-void Employee :: viewSalary(int id)
+void Employee :: viewSalary(int id) //function to view salary details of an employee
 {		
 	Employee e;
 	FILE *fp;
 	system("clear");
+	gotoxy(50,5);
+    cout<<"SALARY DETAILS";
+    gotoxy(48,7);
+    cout<<"----------------------";
     int found;
 	fp=fopen(EMP_FILE,"r+");
 	if(fp==NULL)
@@ -651,7 +692,7 @@ void Employee :: viewSalary(int id)
 		rewind(fp);
 		while(fread (&e, sizeof(e),1,fp))
 		{
-			if(e.empID==id)
+			if(e.empID==id) //getting the employee 
 			{
 				found=1;
 				break;
@@ -659,14 +700,13 @@ void Employee :: viewSalary(int id)
 		}
 		if(found==1)
 		{
-			if(e.salary==0)
+			if(e.salary==0) //if salary is not calculated
 			{
 				cout<<"\n\n\t\tSalary not generated!!\n\n";
 			}
 			else
 			{
-				gotoxy(50,5);
-				cout<<"VIEW SALARY";
+				
 				cout<<"\n\n\t\t-------------------------------------------------------------------";
 				cout<<"\n\n\t\t\t\tID              : "<<e.empID;
 				cout<<"\n\n\t\t\t\tNAME            : "<<e.empName;
@@ -681,7 +721,7 @@ void Employee :: viewSalary(int id)
 	}
 }
 
-void Employee::changeCredentials()
+void Employee::changeCredentials() //function to change username and password
 {
 	Employee e;
 	FILE *fp;
@@ -691,14 +731,18 @@ void Employee::changeCredentials()
 	
 	gotoxy(50,5);
 	cout<<"CHANGE CREDENTIALS";
+	gotoxy(48,7);
+    cout<<"------------------------";
 	gotoxy(40,10);
-	cout<<"Please login using default username and password ";
+	cout<<"Please login using default username and password ";//prompt
 	gotoxy(40,12);
 	cout<<"Enter your User Name\t : ";
 	cin>>usernm;
 	gotoxy(40,14);
 	cout<<"Enter your password\t : ";
-	cin>>pass;
+	cin.ignore();
+	getPassword(pass);
+	//cin>>pass;
 
 	if((fp=fopen(EMP_FILE,"r+"))==NULL)
 	{
@@ -709,7 +753,7 @@ void Employee::changeCredentials()
 		}
 	}
 	rewind(fp);
-	while((fread(&e,sizeof(e),1,fp))==1)
+	while((fread(&e,sizeof(e),1,fp))==1) //fetching username and password
 	{
 		if(strcmp(pass,e.empPass) == 0 && strcmp(usernm,e.empUser) == 0)
 		{
@@ -717,62 +761,74 @@ void Employee::changeCredentials()
 			break;
 		}
 	}
-	if(flag==1)
+	if(flag==1)//if found
 	{
-		system("clear");
 		fseek(fp,-sizeof(e),SEEK_CUR);
-		gotoxy(40,10);
-		cout<<"Logged in as "<<e.empName;
-		gotoxy(41,14);
+		system("clear");
+		gotoxy(40,9);
+		cout<<"---------------------------------------";
+		gotoxy(50,10);
+		cout<<"LOGGED IN ASS "<<e.empName;
+		gotoxy(40,11);
+		cout<<"---------------------------------------";
+		gotoxy(41,14); //prompting for new username and password
 		cout<<"Enter new username (max 10 charcters and no space): ";
-		cin>>e.empUser;
+		cin>>usernm;
 		do
 	    {
 			cout<<"\n\t\t\t\t\t\tYou have "<<i<<" attempt(s) left!";
 			cout<<"\n\n\t\t\t\t\tEnter new password : ";
 			cin>>newpass1;
+			//cin.ignore();
+			//getPassword(newpass1);
 			i--;
-			check=checkpass(newpass1);
+			check=checkpass(newpass1); //checking if password has all conditions
 			if(check == 1)
 				break;
 	    }while(i > 0);	
         if(check == 1)
 		{
-			cout<<"\n\n\t\t\t\t\tConfirm password   : ";
+			cout<<"\n\n\t\t\t\t\tConfirm password   : "; //prompting to confirm password
 			cin>>newpass2;
-			check=strcmp(newpass1,newpass2);
-			if(check==0)
+			//getPassword(newpass2);
+			//cin.ignore();
+			check=strcmp(newpass1,newpass2); //comparing two passwords
+			if(check==0) //if they are same
 			{
-				strcpy(e.empPass,newpass1);
-				fwrite(&e,sizeof(e),1,fp);
+				strcpy(e.empUser,usernm); //copy the new username to the employee object
+				strcpy(e.empPass,newpass1); //copy the new password to the employee object
+				fwrite(&e,sizeof(e),1,fp); //writing to the file
 				system("clear");
 				cout<<"\n\n\t\t----Username and Password change successfull----\n\n\n";
 				press();
 			}
-            else
+            else //if second password is not same
 			{
 				cout<<"\n\n\t\t----Password Mismatch!!----\n\n\n";
 				press();
+				return;
 			}
 		}
-		else
+		else //if attempts are finished
 		{
 			cout<<"\n\n\t\t----Credential change unsuccessfull----\n\n\n";
 			press();
+			return;
 		}
 
 	}
-	else
+	else //if username and password doesnot match with file
 	{
 		gotoxy(50,30);
 		cout<<"-----Wrong Username or Password------------";
 		press();
+		return;
 	}
 
 	fclose(fp);
 }
 
-class menu
+class menu //base class for menu
 {
 	private:
 		int choice;
@@ -782,14 +838,14 @@ class menu
     public:
         void welcome();
 		void login();
-		void showMenu();
+		void showMenu(); //function name common to all
 };
 
 void menu::welcome()
 {
-	Employee e;
+	Employee e; //object of class employee
 	char option;
-    system("clear");
+    system("clear"); //welcome screen
 	gotoxy(30,5);
 	cout<<"____________________________________________________________________"<<endl;
 	gotoxy(30,6);		
@@ -807,32 +863,32 @@ void menu::welcome()
 	gotoxy(40,16);
 	cout<<"E for exit "<<endl;
 	gotoxy(35,18);
-	cout<<"Enter your choice : \t\t";
+	cout<<"Enter your choice :\t"; //prompt
 	cin>>option;
     switch(option)
     {
-		case 'L':login();
+		case 'L':login(); //function of class menu
 				break;
-		case 'U':e.changeCredentials();
+		case 'U':e.changeCredentials(); //functon of class employee
 				break;
 		case 'E':system("clear");
 				gotoxy(50,10);
-				cout<<"Thank you";
+				cout<<"Thank you\n\n\n";
 				exit(0);
 				break;
 		default: cout<<"\nWrong choice"<<endl;
 	}
 }
 
-class adminMenu : public menu
+class adminMenu : public menu //derived class from menu
 {
 	private:
 		int choice;
         int id;
     public:
-        void showMenu()
+        void showMenu() //function declared in base class
 		{
-			Employee e;
+			Employee e; //object of class employee
 			system("clear");
 			gotoxy(50,5);
 			cout<<"ADMIN MENU "<<endl;
@@ -855,6 +911,7 @@ class adminMenu : public menu
 			cin>>choice;
 			switch(choice)
 			{
+				//calling functions of employee class
 				case 0: system("clear");
 						gotoxy(50,10);
 						cout<<"Thank you\n\n\n";
@@ -873,71 +930,69 @@ class adminMenu : public menu
 						e.displayEmp();
 						break;
 				case 5: system("clear");
-						cout<<"\nEnter employee ID to search : ";
+						cout<<"\nEnter employee ID to search : "; //prompt
 						cin>>id;
 						e.searchEmp(id);
 						break;
 				case 6: welcome();
 						break;
 				default:cout<<"\n\n\t\tWrong choice";
-						return;
 			}
 			showMenu();
 		}
 }amenu;
 
-class employeeMenu : public menu
+class employeeMenu : public menu //derived class from menu
 {
-        private:
-                int choice;
-                int loginId;
-        public:
-			
-			void setLoginid(int id)
+	private:
+		int choice;
+		int loginId;
+	public:
+		//setter function to set employee id from emplogin function
+		void setLoginid(int id)
+		{
+			loginId=id; //sets the id used to login
+		}
+		void showMenu()
+		{
+			Employee e;
+			system("clear");
+			gotoxy(50,5);
+			cout<<"EMPLOYEE MENU"<<endl;
+			gotoxy(50,8);
+			cout<<"Welcome Employee "<<loginId<<endl;
+			gotoxy(40,10);
+			cout<<"1. View Profile"<<endl;
+			gotoxy(40,12);
+			cout<<"2. View Salary"<<endl;
+			gotoxy(40,14);
+			cout<<"3. Return to Login"<<endl;
+			gotoxy(40,18);
+			cout<<"0. EXIT"<<endl;
+			gotoxy(40,20);
+			cout<<"Enter Your Option :--> ";
+			cin>>choice;
+			switch(choice)
 			{
-				loginId=id;
+				//calling functions of class employee
+				case 0 :system("clear");
+						gotoxy(50,10);
+						cout<<"Thank you\n\n\n";
+						exit(0);
+						break;
+				case 1 :e.searchEmp(loginId);
+						break;
+				case 2 :e.viewSalary(loginId);
+						break;
+				case 3 :welcome();
+						break;
+				default:cout<<"\n\n\tWrong choice";
 			}
-			void showMenu()
-			{
-				Employee e;
-				
-				system("clear");
-                gotoxy(50,5);
-				cout<<"EMPLOYEE MENU"<<endl;
-				gotoxy(50,8);
-				cout<<"Welcome Employee "<<loginId<<endl;
-				gotoxy(40,10);
-				cout<<"1. View Profile"<<endl;
-				gotoxy(40,12);
-				cout<<"2. View Salary"<<endl;
-				gotoxy(40,14);
-				cout<<"3. Return to Login"<<endl;
-				gotoxy(40,18);
-				cout<<"0. EXIT"<<endl;
-				gotoxy(40,20);
-				cout<<"Enter Your Option :--> "<<endl;
-				cin>>choice;
-				switch(choice)
-				{
-					case 0 :system("clear");
-							gotoxy(50,10);
-							cout<<"Thank you\n\n\n";
-							exit(0);
-							break;
-					case 1 :e.searchEmp(loginId);
-							break;
-					case 2 :e.viewSalary(loginId);
-							break;
-					case 3 :welcome();
-							break;
-					default:cout<<"\n\n\tWrong choice";
-							break;
-				}
-				showMenu();
-			}
+			showMenu();
+		}
 }emenu;
 
-class accountantMenu : public menu
+class accountantMenu : public menu //derived class from class menu
 {
 	private:
 		int choice;
@@ -956,34 +1011,36 @@ class accountantMenu : public menu
 			gotoxy(40,18);
 			cout<<"0. EXIT"<<endl;
 			gotoxy(40,20);
-			cout<<"Enter Your Option :-->  ";
+			cout<<"Enter Your Option :-->  ";//prompt
 			cin>>choice;
 			switch(choice)
 			{
+				//calling functions of class employee
 				case 0:system("clear");
-				gotoxy(50,10);
-				cout<<"Thank you\n\n\n";
-				exit(0);
-				break;
+						gotoxy(50,10);
+						cout<<"Thank you\n\n\n";
+						exit(0);
+						break;
 				case 1:e.calculateSalary();
-					break;
+						break;
 				case 2:e.printPayslip();
-					break;
+						break;
 				case 3:welcome();
-					break;
+						break;
 				default:cout<<"\n\n\tWrong choice";
 			}
 			showMenu();
 		}
 }cmenu;
 
-void Employee::empLogin(char *user, char *pass)
+void Employee::empLogin(char *user, char *pass) //class employee function to login
 {
+	//this function is called if user is not admin
 	Employee e;
-	menu m;
-	adminMenu amenu;
-	employeeMenu emenu;
-	accountantMenu cmenu;
+	menu m; //object of menu class
+	adminMenu amenu; //object of adminMenu class
+	employeeMenu emenu; //object of employeeMenu class
+	accountantMenu cmenu; //object of accountantMenu class
 	int flag=0,check=0, option;
 	char choice;
 	if((fp=fopen(EMP_FILE,"r+"))==NULL)
@@ -997,38 +1054,43 @@ void Employee::empLogin(char *user, char *pass)
 	rewind(fp);
 	while((fread(&e,sizeof(e),1,fp))==1)
 	{
+		//fetching username and password
 		if(strcmp(user,e.empUser) == 0 && strcmp(pass,e.empPass) == 0)
 		{
 			flag=1;
 			break;
 		}
 	}
-	if(flag==1)
+	if(flag==1) //if found
 	{
 		gotoxy(50,5);
-		cout<<"Logged in as "<<e.empName;
+		cout<<"Logged in as "<<e.empName; //fetches the corresponding name of the id
 		gotoxy(40,10);
-		option=e.desigCode;
+		option=e.desigCode; //fetches and stores the corresponding designation code
+		//designation code desides which menu to display
 		switch(option)
-		{
+		{	
+			//if user is manager
 			case 1: cout<<"\nYou have admin Privileges!";
 					amenu.showMenu();
 					break;
+			//if user is a normal employee
 			case 2:
 			case 3:
 			case 4: emenu.setLoginid(e.empID);
 					emenu.showMenu();
 					break;
+			//if user is an accountant
 			case 5: cmenu.showMenu();
 					break;
 			default: cout<<"\nUNEXPECTED ERROR";
 		}
 	}
-	if(!flag)
+	else //if not found
 	{
 		system("clear");
 		gotoxy(40,10);
-		cout<<"\nUsername or Password is incorrect";
+		cout<<"Username or Password is incorrect";
 		do
 		{
 			check=0;
@@ -1036,10 +1098,11 @@ void Employee::empLogin(char *user, char *pass)
 			cout<<"Do you want to continue? ";
 			gotoxy(40,16);
 			cout<<"press L to return to Login \t\t\t press M to return to main menu ";
-			cout<<"\n\n\tEnter your choice : ";
+			cout<<"\n\n\t\t\t\t\tEnter your choice : ";
 			cin>>choice;
 			switch(choice)
 			{
+				//calling functions of menu class
 				case 'L':m.login();
 						break;
 				case 'M':m.welcome();
@@ -1053,25 +1116,33 @@ void Employee::empLogin(char *user, char *pass)
 	}
 }
 
-void menu::login()
+void menu::login() //function of menu class to display login screen 
 {
 	Employee e;
-        
+    
 	system("clear");
+	gotoxy(50,5);
+	cout<<"LOGIN TO YOUR PROFILE";
+	gotoxy(48,7);
+    cout<<"------------------------";
 	gotoxy(40,10);
-	cout<<"Enter your User Name\t: ";
+	cout<<"Enter your User Name\t: "; //prompt
 	cin>>usernm;
 	gotoxy(40,12);
-	cout<<"Enter your Password\t : ";
-	cin>>passwd;
+	cout<<"Enter your Password\t : "; 
+	//cin>>passwd;
+	cin.ignore();
+	getPassword(passwd); //accept password display stars
 	//char *passwd=getpass("Enter your password\t: ");
 
 	if( (strcmp(usernm,user) == 0) && (strcmp(passwd,pass) == 0) )
 	{
+		//if user is an admin
 		amenu.showMenu();
 	}
 	else if( (strcmp(usernm,user) != 0 || strcmp(passwd,pass) != 0) )
 	{
+		//calls function login for employees in employee class
 		e.empLogin(usernm,passwd);
 	}
 	else
@@ -1081,26 +1152,31 @@ void menu::login()
 	}
 }
 
-void Employee :: calculateSalary()
+void Employee :: calculateSalary() //function to calculate the salary of an employee
 {
 	Employee e;
 	FILE *fp;
-	int tempid;
+	int empId;
 	float hra,pf,da,other;
+	system("clear");
+	gotoxy(50,5);
+	cout<<"CALCULATE SALARY";
+	gotoxy(48,7);
+    cout<<"---------------------";
 	fp=fopen(EMP_FILE,"r+");
 	if(fp==NULL)
 	{
-		cout<<"Error opening file";
+		cout<<"\nError opening file";
 	}
 	else
 	{
-		cout<<"\n\n\tEnter Employee ID : ";
-		cin>>tempid;
+		cout<<"\n\n\t\tEnter Employee ID : "; //prompt
+		cin>>empId;
 		int found;
 		rewind(fp);
 		while(fread (&e, sizeof(e),1,fp))
 		{
-			if(e.empID==tempid)
+			if(e.empID==empId) //fetching employee details
 			{
 				found=1;
 				break;
@@ -1108,42 +1184,43 @@ void Employee :: calculateSalary()
 		}
 		if(found==1)
 		{
-			if(e.salary != 0)
+			if(e.salary != 0) //check if salary already generated
 			{
 				cout<<"\n\n\tSalary already generated";
 			}
 			else
 			{
 				system("clear");
-			
+				
 				cout<<"\n-------------------------------------------------------------------------";
 				cout<<"\n\n\t\tEMPLOYEE ID       : "<<e.empID;
 				cout<<"\n\n\t\tNAME              : "<<e.empName;
 				cout<<"\n\n\t\tDESIGNATION       : "<<e.desig;
-				cout<<"\n\n\t\tEnter other allowance for this employee(%) : ";
+				cout<<"\n\n\t\tEnter other allowance for this employee(%) : "; //prompt
 				scanf("%f",&e.otherAllowance);
-				pf=0.12*e.basicPay;
+				pf=0.12*e.basicPay; //different allowance and deductions
 				hra=0.1*e.basicPay;
 				da=0.05*e.basicPay;
-				other=e.basicPay*e.otherAllowance/100;
-				e.salary=e.basicPay+hra+da+other-pf;
-				fseek(fp,-sizeof(e),SEEK_CUR);
-				fwrite(&e,sizeof(e),1,fp);
-				cout<<"\n\n\t\tSalary for Employee for this month = "<<e.salary;
+				other=e.basicPay*e.otherAllowance/100; 
+				e.salary=e.basicPay+hra+da+other-pf; //calculating total salary
+				fseek(fp,-sizeof(e),SEEK_CUR); //moving the cursor back
+				fwrite(&e,sizeof(e),1,fp); //writing the salary and other allowance to file
 				cout<<"\n-------------------------------------------------------------------------";
+				cout<<"\n\n\t\tSalary for Employee for this month = "<<e.salary; //displaying salary
+				
              }        
 		}
-		else
+		else //if id not found
 		{
-			cout<<"\n\n\t\tNo Record found";
+			cout<<"\n\n\t\t\tNo Record found";
 		}
 	}
         
-        fclose(fp);
-        press();
+	fclose(fp);
+	press();
 }
 
-void Employee:: printPayslip()
+void Employee:: printPayslip() //function to print payslip of an employee
 {
 	Employee e;
 	system("clear");
@@ -1162,13 +1239,13 @@ void Employee:: printPayslip()
 	
 	while (fread (&e, sizeof(e), 1, fp))
     {
-        if(e.empID == empId)
+        if(e.empID == empId) //fetches id and details
         {
             found = 1;
             break;
         }
     }
-    if(found)
+    if(found==1)
     {
         system("clear");
         gotoxy(5,5);
@@ -1215,12 +1292,11 @@ void Employee:: printPayslip()
         cout<<"\n\t--------------------------------------------------------------------------------------------------------------------------------------------------";
         gotoxy(50,28);
         cout<<"Net Salary - \tRs."<<e.salary;
-        printf("\n\n\t--------------------------------------------------------------------------------------------------------------------------------------------------");
+        cout<<"\n\n\t--------------------------------------------------------------------------------------------------------------------------------------------------";
     }
-
 	else
     {
-        printf("\n\t\t\tNo Record");
+        cout<<"\n\t\t\tNo Record found";
     }
 	press();
     fclose(fp);
@@ -1228,6 +1304,6 @@ void Employee:: printPayslip()
 
 int main()
 {
-	menu m;
-	m.welcome();
+	menu m; //object of class menu
+	m.welcome(); //calling welcome function of class menu
 }
